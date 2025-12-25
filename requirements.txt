@@ -1,0 +1,10 @@
+# Requirements for streamlit_trial_1.py
+# Install with: python -m pip install -r requirements.txt
+streamlit
+pandas
+numpy
+requests
+python-docx
+openpyxl
+pypdf
+xlrd
