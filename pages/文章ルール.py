@@ -7,11 +7,18 @@ BASE_DIR = Path(__file__).resolve().parents[1]
 DATA_DIR = BASE_DIR / "data"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 PERSIST_PATH = DATA_DIR / "df_word_rule.pkl"
+PERSIST_LETTER = DATA_DIR / "df_rule_letter.pkl"
+PERSIST_GREETING = DATA_DIR / "df_rule_greeting.pkl"
 
 st.set_page_config(
         page_title="文章ルール",
 )
-
+logo = "images/品川学園シンボル.png"
+st.logo(
+    logo,
+    size='large',
+    icon_image=logo,
+)
 
 st.title("文章確認ルール管理")
 st.markdown("""
@@ -32,6 +39,21 @@ def load_persisted():
 
 if "df_word_rule" not in st.session_state:
     st.session_state["df_word_rule"] = load_persisted()
+
+# load persisted auxiliary sheets if present
+if "df_rule_letter" not in st.session_state:
+    if PERSIST_LETTER.exists():
+        try:
+            st.session_state["df_rule_letter"] = pd.read_pickle(PERSIST_LETTER)
+        except Exception as e:
+            st.error(f"Failed to load persisted df_rule_letter: {e}")
+
+if "df_rule_greeting" not in st.session_state:
+    if PERSIST_GREETING.exists():
+        try:
+            st.session_state["df_rule_greeting"] = pd.read_pickle(PERSIST_GREETING)
+        except Exception as e:
+            st.error(f"Failed to load persisted df_rule_greeting: {e}")
 
 # st.subheader("現在のルールDB (df_word_rule)")
 # if st.session_state.get("df_word_rule") is None:
@@ -62,6 +84,33 @@ with col1:
                 st.success("ファイル読込みました")
             except Exception:
                 st.error("cannot read the file, please check you link or the file behind your link")
+                
+            try:
+                df_rule_letter = pd.read_excel(uploaded, sheet_name="2.書式と運用ルール")
+                # save to session so it can be displayed elsewhere and persist to disk
+                st.session_state["df_rule_letter"] = df_rule_letter
+                try:
+                    df_rule_letter.to_pickle(PERSIST_LETTER)
+                    st.success("シート '2.書式と運用ルール' を読み込み、永続化しました。")
+                except Exception as e:
+                    st.error(f"df_rule_letter を永続化できませんでした: {e}")
+            except ValueError:
+                print("ファイルに「2.書式と運用ルール」というTabが見つかりませんでした。 シート名を確認してください。")
+            except Exception as e:
+                print("Failed to read Excel:", e)
+                
+            try:
+                df_rule_greeting = pd.read_excel(uploaded, sheet_name="3.時候の挨拶")
+                st.session_state["df_rule_greeting"] = df_rule_greeting
+                try:
+                    df_rule_greeting.to_pickle(PERSIST_GREETING)
+                    st.success("シート '3.時候の挨拶' を読み込み、永続化しました。")
+                except Exception as e:
+                    st.error(f"df_rule_greeting を永続化できませんでした: {e}")
+            except ValueError:
+                print("ファイルに「3.時候の挨拶」というTabが見つかりませんでした。 シート名を確認してください。")
+            except Exception as e:
+                print("Failed to read Excel:", e)
 with col3:
     if st.button("(2)システム保存", icon="💾", width=200):
         df = st.session_state.get("df_word_rule")
@@ -149,4 +198,47 @@ else:
     # st.download_button("ダウンロード(CSV)", data=csv, file_name="df_word_rule.csv", mime="text/csv")
     with col_download:
             st.download_button("ダウンロード(CSV)", data=csv, file_name="df_word_rule.csv", mime="text/csv", icon="📥", width=200)
-    
+
+
+st.markdown("---")
+st.subheader("4. 添付ファイル書式と運用ルール")
+# st.write(".   * 適用される文章ルールは別タブに表示しています。")
+# st.write(".   * デフォルトは令和７年度版の文章ルールデータを使用しています。")
+# st.write(".   * 別タブのテーブルデータを直接編集して、ルールの追加や編集できます")
+# st.write(".   * 新しいルールファイルを読み込むことで、ルールデータを差し替えることもできます")
+
+st.markdown("""
+               :writing_hand: 配布物の書式など、チェックしてください。</br>
+            """, unsafe_allow_html=True)
+
+# If the uploaded Excel contained the "2.書式と運用ルール" sheet, show it here
+df_rule_letter = st.session_state.get("df_rule_letter")
+if df_rule_letter is not None:
+    try:
+        st.dataframe(df_rule_letter)
+        csv = df_rule_letter.to_csv(index=False).encode("utf-8")
+        st.download_button("Download this table (CSV)", data=csv, file_name="df_rule_letter.csv", mime="text/csv")
+    except Exception as e:
+        st.error(f"Failed to display df_rule_letter: {e}")
+
+
+st.markdown("---")
+st.subheader("5. 時候の挨拶例")
+# st.write(".   * 適用される文章ルールは別タブに表示しています。")
+# st.write(".   * デフォルトは令和７年度版の文章ルールデータを使用しています。")
+# st.write(".   * 別タブのテーブルデータを直接編集して、ルールの追加や編集できます")
+# st.write(".   * 新しいルールファイルを読み込むことで、ルールデータを差し替えることもできます")
+
+st.markdown("""
+               :writing_hand: 正式文書冒頭の挨拶にご参考ください。</br>
+            """, unsafe_allow_html=True)
+
+# If the uploaded Excel contained the "3.時候の挨拶" sheet, show it here
+df_rule_greeting = st.session_state.get("df_rule_greeting")
+if df_rule_greeting is not None:
+    try:
+        st.dataframe(df_rule_greeting)
+        csv = df_rule_greeting.to_csv(index=False).encode("utf-8")
+        st.download_button("Download this table (CSV)", data=csv, file_name="df_rule_greeting.csv", mime="text/csv")
+    except Exception as e:
+        st.error(f"Failed to display df_rule_greeting: {e}")
