@@ -17,7 +17,13 @@ st.set_page_config(
         page_title="文章確認ツール",
 )
 
-
+logo = "images/品川学園シンボル.png"
+st.logo(
+    logo,
+    size='large',
+    icon_image=logo,
+)
+st.sidebar.markdown("***品学PTA用です〜***")
 st.title("品川学園PTA文章確認ミニツール")
 
 
@@ -343,3 +349,5 @@ if st.button("16355!!"):
 # Display analysis output after processing so the text area reflects changes immediately
 analysis_val = st.session_state.get("analysis_output", "")
 st.text_area("Analysis output", value=analysis_val, height=500, disabled=True)
+
+
